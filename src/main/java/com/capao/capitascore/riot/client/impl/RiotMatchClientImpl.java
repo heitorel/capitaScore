@@ -4,7 +4,6 @@ import com.capao.capitascore.config.RiotApiProperties;
 import com.capao.capitascore.riot.client.RiotMatchClient;
 import com.capao.capitascore.riot.dto.MatchDto;
 import com.capao.capitascore.riot.dto.TimelineDto;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
