@@ -24,13 +24,21 @@ public class MatchController {
     @PostMapping("/sync/all")
     public ResponseEntity<Void> syncAllMembers(
             @RequestParam(defaultValue = "0") int start,
-            @RequestParam(defaultValue = "6") int count) {
+            @RequestParam(defaultValue = "20") int count) {
 
         List<Member> members = memberRepository.findAll();
 
-        members.stream()
-                .filter(m -> m.getActive() == null || Boolean.TRUE.equals(m.getActive()))
-                .forEach(m -> ingestionService.syncMatchesForPuuid(m.getPuuid(), start, count));
+        for (Member m : members) {
+            if (m.getActive() == null || Boolean.TRUE.equals(m.getActive())) {
+                ingestionService.syncMatchesForPuuid(m.getPuuid(), start, count);
+                try {
+                    Thread.sleep(3000); // 3s entre cada chamada para evitar rate limit
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break; // opcional: parar se a thread foi interrompida
+                }
+            }
+        }
 
         return ResponseEntity.accepted().build();
     }
