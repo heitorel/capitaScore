@@ -7,7 +7,7 @@
 	<modelVersion>4.0.0</modelVersion>
     <groupId>com.capao</groupId>
     <artifactId>capitascore</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>capitascore</name>
     <description>League of Legends stats API</description>
 
