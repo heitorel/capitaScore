@@ -1,0 +1,20 @@
+server:
+  port: 8080
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/capitascore?createDatabaseIfNotExist=true&serverTimezone=UTC
+    username: root
+    password: admin
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate.format_sql: true
+
+riot:
+  api-key: RGAPI-fd401143-aacc-4bec-8670-a2d0ff108e53
+  region: br1
+  americas-base-url: https://americas.api.riotgames.com
+  match-base-path: /lol/match/v5
