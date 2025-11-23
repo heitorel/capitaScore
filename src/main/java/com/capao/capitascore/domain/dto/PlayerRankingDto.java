@@ -1,4 +1,4 @@
-package com.capao.capitascore.metrics.players.dto;
+package com.capao.capitascore.domain.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package com.capao.capitascore.match;
+package com.capao.capitascore.domain.entity;
 
 import com.capao.capitascore.common.BaseEntity;
 import jakarta.persistence.*;

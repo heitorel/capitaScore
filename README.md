@@ -102,35 +102,28 @@ src/main/java/com/capao/capitascore
 │   ├── RestConfig.java
 │   └── RiotApiProperties.java
 │
-├── match
-│   ├── controller
-│   │   └── MatchController.java
-│   ├── repository
-│   │   ├── MatchRepository.java
-│   │   ├── MatchParticipantRepository.java
-│   │   └── MatchTimelineRepository.java
-│   ├── service
-│   │   └── MatchIngestionService.java
-│   ├── entity
-│       ├── Match.java
-│       ├── MatchParticipant.java
-│       └── MatchTimeline.java
-│
-├── member
-│   ├── Member.java
+├── controller
+│   ├── MatchController.java
 │   ├── MemberController.java
-│   └── MemberRepository.java
+│   └──RankingController.java
 │
-├── metrics
-│   ├── controller
-│   │   └── RankingController.java
-│   ├── players
-│      ├── dto
-│      │   └── PlayerRankingDto.java
-│      ├── repository
-│      │   └── PlayerMatchMetricsRepository.java
-│      └── entity
-│          └── PlayerMatchMetrics.java
+├── domain
+│   ├── dto
+│   │   └── PlayerRankingDto.java
+│   ├── entity
+│   │   ├── Match.java
+│   │   ├── MatchParticipant.java
+│   │   ├── MatchTimeline.java
+│   │   ├── Member.java
+│   │   └── PlayerMatchMetrics.java
+│   ├── repository
+│   │   ├── MatchParticipantRepository.java
+│   │   ├── MatchRepository.java
+│   │   ├── MatchTimelineRepository.java
+│   │   ├── MemberRepository.java
+│   │   └── PlayerMatchMetricsRepository.java
+│   └── service
+│       └── MatchIngestionService.java
 │
 ├── riot
 │   ├── client

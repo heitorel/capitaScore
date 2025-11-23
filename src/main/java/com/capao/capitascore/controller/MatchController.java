@@ -1,8 +1,8 @@
-package com.capao.capitascore.match.controller;
+package com.capao.capitascore.controller;
 
-import com.capao.capitascore.match.service.MatchIngestionService;
-import com.capao.capitascore.member.Member;
-import com.capao.capitascore.member.MemberRepository;
+import com.capao.capitascore.domain.service.MatchIngestionService;
+import com.capao.capitascore.domain.entity.Member;
+import com.capao.capitascore.domain.repository.MemberRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

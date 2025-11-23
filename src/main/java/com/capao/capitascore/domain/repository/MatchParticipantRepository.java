@@ -1,6 +1,6 @@
-package com.capao.capitascore.match.repository;
+package com.capao.capitascore.domain.repository;
 
-import com.capao.capitascore.match.MatchParticipant;
+import com.capao.capitascore.domain.entity.MatchParticipant;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface MatchParticipantRepository extends JpaRepository<MatchParticipant, Long> {
