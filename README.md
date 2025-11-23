@@ -109,17 +109,20 @@ src/main/java/com/capao/capitascore
 │
 ├── domain
 │   ├── dto
+│   │   ├── MemberRankingDto.java
 │   │   └── PlayerRankingDto.java
 │   ├── entity
 │   │   ├── Match.java
 │   │   ├── MatchParticipant.java
 │   │   ├── MatchTimeline.java
 │   │   ├── Member.java
+│   │   ├── MemberRankingMetrics.java
 │   │   └── PlayerMatchMetrics.java
 │   ├── repository
 │   │   ├── MatchParticipantRepository.java
 │   │   ├── MatchRepository.java
 │   │   ├── MatchTimelineRepository.java
+│   │   ├── MemberRankingMetricsRepository.java
 │   │   ├── MemberRepository.java
 │   │   └── PlayerMatchMetricsRepository.java
 │   └── service

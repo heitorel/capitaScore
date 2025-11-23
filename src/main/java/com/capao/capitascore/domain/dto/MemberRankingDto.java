@@ -1,17 +1,17 @@
 package com.capao.capitascore.domain.dto;
 
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class PlayerRankingDto {
+public class MemberRankingDto {
 
-    private String puuid;
-    private String nome;
+    private Integer position;
     private String nick;
-    private Double avgFinalScore;
-    private Long gamesPlayed;
+    private String puuid;
+    private Integer matches;
+    private Double meanFinalScore;
 
 }
-
