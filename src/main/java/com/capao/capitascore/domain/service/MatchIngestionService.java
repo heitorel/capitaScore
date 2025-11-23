@@ -1,12 +1,12 @@
-package com.capao.capitascore.match.service;
+package com.capao.capitascore.domain.service;
 
-import com.capao.capitascore.match.Match;
-import com.capao.capitascore.match.MatchParticipant;
-import com.capao.capitascore.match.MatchTimeline;
-import com.capao.capitascore.match.repository.MatchParticipantRepository;
-import com.capao.capitascore.match.repository.MatchRepository;
-import com.capao.capitascore.match.repository.MatchTimelineRepository;
-import com.capao.capitascore.member.MemberRepository;
+import com.capao.capitascore.domain.entity.Match;
+import com.capao.capitascore.domain.entity.MatchParticipant;
+import com.capao.capitascore.domain.entity.MatchTimeline;
+import com.capao.capitascore.domain.repository.MatchParticipantRepository;
+import com.capao.capitascore.domain.repository.MatchRepository;
+import com.capao.capitascore.domain.repository.MatchTimelineRepository;
+import com.capao.capitascore.domain.repository.MemberRepository;
 import com.capao.capitascore.riot.client.RiotMatchClient;
 import com.capao.capitascore.riot.dto.MatchDto;
 import com.capao.capitascore.riot.dto.MatchInfoDto;

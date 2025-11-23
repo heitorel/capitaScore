@@ -1,7 +1,7 @@
-package com.capao.capitascore.metrics.players.repository;
+package com.capao.capitascore.domain.repository;
 
-import com.capao.capitascore.metrics.players.PlayerMatchMetrics;
-import com.capao.capitascore.metrics.players.dto.PlayerRankingDto;
+import com.capao.capitascore.domain.entity.PlayerMatchMetrics;
+import com.capao.capitascore.domain.dto.PlayerRankingDto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -15,7 +15,7 @@ public interface PlayerMatchMetricsRepository extends JpaRepository<PlayerMatchM
     List<PlayerMatchMetrics> findByPuuid(String puuid);
 
     @Query("""
-        SELECT new com.capao.capitascore.metrics.players.dto.PlayerRankingDto(
+        SELECT new com.capao.capitascore.domain.dto.PlayerRankingDto(
             pmm.puuid,
             COALESCE(m.nome, 'Desconhecido'),
             COALESCE(m.nick, ''),

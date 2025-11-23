@@ -1,7 +1,6 @@
-package com.capao.capitascore.match;
+package com.capao.capitascore.domain.entity;
 
 import com.capao.capitascore.common.BaseEntity;
-import com.capao.capitascore.member.Member;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

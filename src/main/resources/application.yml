@@ -2,6 +2,8 @@ server:
   port: 8080
 
 spring:
+  application:
+    name: capitascore
   datasource:
     url: jdbc:mysql://localhost:3306/capitascore?createDatabaseIfNotExist=true&serverTimezone=UTC
     username: root

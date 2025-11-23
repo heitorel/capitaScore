@@ -1,7 +1,7 @@
-package com.capao.capitascore.metrics.controller;
+package com.capao.capitascore.controller;
 
-import com.capao.capitascore.metrics.players.dto.PlayerRankingDto;
-import com.capao.capitascore.metrics.players.repository.PlayerMatchMetricsRepository;
+import com.capao.capitascore.domain.dto.PlayerRankingDto;
+import com.capao.capitascore.domain.repository.PlayerMatchMetricsRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
