@@ -539,7 +539,7 @@ def update_member_ranking(conn):
 # EXPORTAR CSV (OPCIONAL)
 # =========================
 
-def export_metrics_to_csv(conn, path: str = "data/player_match_metrics_export.csv"):
+def export_metrics_to_csv(conn, path: str = "player_match_metrics_export.csv"):
     """
     Exporta a tabela player_match_metrics inteira para CSV.
     """
@@ -561,7 +561,7 @@ def export_metrics_to_csv(conn, path: str = "data/player_match_metrics_export.cs
 
     print(f"Exportado CSV para: {path}")
 
-def export_ranking_to_csv(conn, path: str = "data/member_ranking_export.csv"):
+def export_ranking_to_csv(conn, path: str = "member_ranking_export.csv"):
     """
     Exporta a tabela member_ranking_metrics (ranking dos membros)
     para CSV, em vez de player_match_metrics.
