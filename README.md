@@ -140,8 +140,15 @@ src/main/java/com/capao/capitascore
 │
 └── CapitascoreApplication.java
 
-python/
+src/python/
+├── data
+│   └──member_ranking_export.csv
 └── compute_metrics.py
+
+src/front/
+├── style.css
+└── app.js
+
 ```
 
 ---

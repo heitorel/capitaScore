@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <title>CapitaScore – Ranking</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="src/front/style.css" />
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <header class="header">
+            <div class="title">
+                <span class="logo">C</span>
+                CapitaScore – Ranking Flex 5x5
+            </div>
+            <div class="subtitle">
+                Ranking automático baseado no CSV gerado pelo compute_metrics.
+            </div>
+        </header>
+
+        <section class="controls">
+            <div class="input-group">
+                <label for="search">Buscar</label>
+                <input id="search" type="text" placeholder="nick do player..." />
+            </div>
+
+            <div class="input-group">
+                <label for="minGames">Mín. partidas</label>
+                <input id="minGames" type="number" min="0" value="0" />
+            </div>
+
+            <div class="pill-info">
+                Jogadores: <strong><span id="playerCount">0</span></strong>
+            </div>
+        </section>
+
+        <section class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Nick</th>
+                    <th>Partidas</th>
+                    <th>Score médio</th>
+                </tr>
+                </thead>
+                <tbody id="rankingBody"></tbody>
+            </table>
+        </section>
+
+        <div class="footer-note">
+            Score calculado com base em KDA, dano/min, farm, visão, XP/min, CC/min e KP.
+        </div>
+    </div>
+</div>
+
+<script src="src/front/app.js"></script>
+</body>
+</html>
