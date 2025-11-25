@@ -15,8 +15,9 @@ import java.util.List;
 public class Match extends BaseEntity {
 
     @Column(nullable = false, unique = true)
-    private String matchId;      // "BR1_3167775457"
-
+    private String matchId;
+    @Column(name = "queue_id")
+    private Integer queueId;
     private Long gameId;
     private Long gameCreation;   // timestamp Riot
     private Long gameDuration;   // em segundos

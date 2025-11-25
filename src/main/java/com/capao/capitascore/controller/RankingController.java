@@ -1,7 +1,8 @@
 package com.capao.capitascore.controller;
 
-import com.capao.capitascore.domain.dto.PlayerRankingDto;
-import com.capao.capitascore.domain.repository.PlayerMatchMetricsRepository;
+import com.capao.capitascore.domain.dto.MemberRankingDto;
+import com.capao.capitascore.domain.entity.MemberRankingMetrics;
+import com.capao.capitascore.domain.repository.MemberRankingMetricsRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -11,23 +12,28 @@ import java.util.List;
 @RequestMapping("/api/ranking")
 public class RankingController {
 
-    private final PlayerMatchMetricsRepository metricsRepository;
+    private final MemberRankingMetricsRepository rankingRepository;
 
-    public RankingController(PlayerMatchMetricsRepository metricsRepository) {
-        this.metricsRepository = metricsRepository;
+    public RankingController(MemberRankingMetricsRepository rankingRepository) {
+        this.rankingRepository = rankingRepository;
     }
-
-    /**
-     * Ranking geral por jogador, ordenado por média de finalScore (desc).
-     *
-     * Exemplo:
-     * GET /api/ranking?minGames=5
-     */
     @GetMapping
-    public ResponseEntity<List<PlayerRankingDto>> getRanking(
-            @RequestParam(name = "minGames", defaultValue = "3") long minGames) {
+    public ResponseEntity<List<MemberRankingDto>> getRanking(
+            @RequestParam(name = "minGames", defaultValue = "0") int minGames) {
 
-        List<PlayerRankingDto> ranking = metricsRepository.findRankingByAvgFinalScore(minGames);
-        return ResponseEntity.ok(ranking);
+        List<MemberRankingMetrics> entities = rankingRepository.findAllByOrderByPositionAsc();
+
+        List<MemberRankingDto> response = entities.stream()
+                .filter(e -> e.getMatchesCount() != null && e.getMatchesCount() >= minGames)
+                .map(e -> new MemberRankingDto(
+                        e.getPosition(),
+                        e.getNick(),
+                        e.getPuuid(),
+                        e.getMatchesCount(),
+                        e.getMeanFinalScore()
+                ))
+                .toList();
+
+        return ResponseEntity.ok(response);
     }
 }

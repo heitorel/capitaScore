@@ -1,11 +1,12 @@
 import os
 import json
 import math
-import pymysql
 from typing import List, Dict, Any
 
+import pymysql
+
 # =========================
-# CONFIGURAÇÃO DO BANCO
+# CONFIG DO BANCO
 # =========================
 
 DB_CONFIG = {
@@ -68,6 +69,35 @@ def get_connection():
     return pymysql.connect(**DB_CONFIG)
 
 
+def fetch_members(conn):
+    """
+    Busca todos os membros ativos da tabela members.
+    Retorna:
+      - members_by_puuid: {puuid: {"member_id": ..., "nick": ...}}
+      - puuid_set: set com todos os puuids de membros
+    """
+    sql = """
+        SELECT id, puuid, nick
+        FROM members
+        WHERE active = 1
+    """
+    with conn.cursor() as cur:
+        cur.execute(sql)
+        rows = cur.fetchall()
+
+    members_by_puuid: Dict[str, Dict[str, Any]] = {}
+    puuid_set = set()
+    for r in rows:
+        puuid = r["puuid"]
+        members_by_puuid[puuid] = {
+            "member_id": r["id"],
+            "nick": r["nick"],
+        }
+        puuid_set.add(puuid)
+
+    return members_by_puuid, puuid_set
+
+
 def fetch_matches_to_process(conn) -> List[Dict[str, Any]]:
     """
     Busca partidas que ainda não foram processadas em player_match_metrics.
@@ -108,8 +138,7 @@ def fetch_participants_for_match(conn, match_pk: int) -> List[Dict[str, Any]]:
 def insert_metrics(conn, metrics_rows: List[Dict[str, Any]]):
     """
     Insere os dados calculados em player_match_metrics.
-    Usa INSERT ... ON DUPLICATE KEY UPDATE
-    para não duplicar caso rode duas vezes.
+    Usa INSERT ... ON DUPLICATE KEY UPDATE.
     """
     if not metrics_rows:
         return
@@ -203,19 +232,17 @@ def insert_metrics(conn, metrics_rows: List[Dict[str, Any]]):
 # CÁLCULO DE MÉTRICAS POR PARTIDA
 # =========================
 
-def compute_metrics_for_match(match_row: Dict[str, Any],
-                              participants: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    duration_sec = match_row["game_duration_sec"]
+def compute_metrics_for_match(
+    match_row: Dict[str, Any],
+    participants: List[Dict[str, Any]],
+    member_puuids: set
+) -> List[Dict[str, Any]]:
     """
-    Calcula as métricas para TODOS os participantes de uma partida.
-    Usa:
-      - match_participants (tabela)
-      - timeline_json (para xp, CC, wards da timeline)
+    Calcula métricas para TODOS os participantes da partida (para normalização),
+    mas só retorna linhas para quem está em member_puuids.
     """
-
     duration_sec = match_row["game_duration_sec"]
     if not duration_sec or duration_sec <= 0:
-        # evita divisão por zero
         return []
 
     duration_min = duration_sec / 60.0
@@ -261,13 +288,13 @@ def compute_metrics_for_match(match_row: Dict[str, Any],
                     wards_killed[killer] += 1
 
     # ---- Team kills (para KP) ----
-    team_kills = {}
+    team_kills: Dict[int, int] = {}
     for p in participants:
-        team_id = p["teamId"]
+        team_id = p["team_id"]
         team_kills[team_id] = team_kills.get(team_id, 0) + (p.get("kills") or 0)
 
     # ---- Calcula métricas brutas por participante ----
-    temp_rows = []
+    temp_rows: List[Dict[str, Any]] = []
     metrics_raw = {
         "kda": [],
         "dmg_per_min": [],
@@ -281,15 +308,16 @@ def compute_metrics_for_match(match_row: Dict[str, Any],
         "cc_per_min": [],
     }
 
-   for p in participants:
+    for p in participants:
         puuid = p["puuid"]
         mp_id = p["id"]            # match_participants.id
         team_id = p["team_id"]
         champion_name = p["champion_name"]
 
-        # participantId usado pela timeline
+        # participantId usado pela timeline (1..10)
         pid = puuid_to_pid.get(puuid)
         if pid is None:
+            # não deveria acontecer, mas evita crash
             continue
 
         kills = p.get("kills") or 0
@@ -334,7 +362,6 @@ def compute_metrics_for_match(match_row: Dict[str, Any],
             "puuid": puuid,
             "team_id": team_id,
             "champion_name": champion_name,
-
             "kda": kda,
             "dmg_per_min": dmg_per_min,
             "gold_per_min": gold_per_min,
@@ -345,10 +372,13 @@ def compute_metrics_for_match(match_row: Dict[str, Any],
             "xp_per_min": xp_per_min,
             "vision_per_min": vision_per_min,
             "cc_per_min": cc_per_min,
+            # flag se é membro ou não (para filtrar depois)
+            "is_member": puuid in member_puuids,
         }
 
         temp_rows.append(row)
 
+        # métricas para normalização incluem TODOS os players
         metrics_raw["kda"].append(kda)
         metrics_raw["dmg_per_min"].append(dmg_per_min)
         metrics_raw["gold_per_min"].append(gold_per_min)
@@ -359,6 +389,9 @@ def compute_metrics_for_match(match_row: Dict[str, Any],
         metrics_raw["xp_per_min"].append(xp_per_min)
         metrics_raw["vision_per_min"].append(vision_per_min)
         metrics_raw["cc_per_min"].append(cc_per_min)
+
+    if not temp_rows:
+        return []
 
     # ---- Normalização por partida ----
     scores_norm = {
@@ -375,8 +408,12 @@ def compute_metrics_for_match(match_row: Dict[str, Any],
     }
 
     # ---- Monta linhas finais com scores normalizados e final_score ----
-    metrics_rows = []
+    metrics_rows: List[Dict[str, Any]] = []
     for i, base in enumerate(temp_rows):
+        # só queremos salvar métricas de MEMBERS
+        if not base["is_member"]:
+            continue
+
         score_kda = scores_norm["kda"][i]
         score_dmg_per_min = scores_norm["dmg_per_min"][i]
         score_gold_per_min = scores_norm["gold_per_min"][i]
@@ -401,6 +438,9 @@ def compute_metrics_for_match(match_row: Dict[str, Any],
             WEIGHTS["cc_per_min"]        * score_cc_per_min
         )
 
+        # remove flag
+        base.pop("is_member", None)
+
         base.update({
             "score_kda":               score_kda,
             "score_dmg_per_min":       score_dmg_per_min,
@@ -421,10 +461,85 @@ def compute_metrics_for_match(match_row: Dict[str, Any],
 
 
 # =========================
+# RANKING DE MEMBROS
+# =========================
+
+def update_member_ranking(conn):
+    """
+    Calcula ranking por membro (apenas membros da tabela members)
+    e grava em member_ranking_metrics.
+    """
+    # agrega por membro
+    sql = """
+        SELECT m.id AS member_id,
+               m.puuid AS puuid,
+               m.nick AS nick,
+               COUNT(pmm.id) AS matches_count,
+               AVG(pmm.final_score) AS mean_final_score
+        FROM player_match_metrics pmm
+        JOIN members m ON m.puuid = pmm.puuid
+        GROUP BY m.id, m.puuid, m.nick
+        ORDER BY mean_final_score DESC;
+    """
+    with conn.cursor() as cur:
+        cur.execute(sql)
+        rows = cur.fetchall()
+
+    if not rows:
+        print("Nenhum dado para ranking de membros.")
+        return
+
+    # atribui posição
+    ranking_rows = []
+    position = 1
+    for r in rows:
+        ranking_rows.append({
+            "member_id": r["member_id"],
+            "puuid": r["puuid"],
+            "nick": r["nick"],
+            "matches_count": int(r["matches_count"]),
+            "mean_final_score": float(r["mean_final_score"]),
+            "position": position,
+        })
+        position += 1
+
+    # insere/atualiza tabela member_ranking_metrics
+    sql_insert = """
+        INSERT INTO member_ranking_metrics (
+            member_id,
+            puuid,
+            nick,
+            matches_count,
+            mean_final_score,
+            position
+        )
+        VALUES (
+            %(member_id)s,
+            %(puuid)s,
+            %(nick)s,
+            %(matches_count)s,
+            %(mean_final_score)s,
+            %(position)s
+        )
+        ON DUPLICATE KEY UPDATE
+            puuid = VALUES(puuid),
+            nick = VALUES(nick),
+            matches_count = VALUES(matches_count),
+            mean_final_score = VALUES(mean_final_score),
+            position = VALUES(position);
+    """
+    with conn.cursor() as cur:
+        cur.executemany(sql_insert, ranking_rows)
+    conn.commit()
+
+    print(f"Ranking de membros atualizado para {len(ranking_rows)} membros.")
+
+
+# =========================
 # EXPORTAR CSV (OPCIONAL)
 # =========================
 
-def export_metrics_to_csv(conn, path: str = "player_match_metrics_export.csv"):
+def export_metrics_to_csv(conn, path: str = "data/player_match_metrics_export.csv"):
     """
     Exporta a tabela player_match_metrics inteira para CSV.
     """
@@ -446,6 +561,48 @@ def export_metrics_to_csv(conn, path: str = "player_match_metrics_export.csv"):
 
     print(f"Exportado CSV para: {path}")
 
+def export_ranking_to_csv(conn, path: str = "data/member_ranking_export.csv"):
+    """
+    Exporta a tabela member_ranking_metrics (ranking dos membros)
+    para CSV, em vez de player_match_metrics.
+    """
+    sql = """
+        SELECT
+            position,
+            nick,
+            puuid,
+            matches_count,
+            mean_final_score
+        FROM member_ranking_metrics
+        ORDER BY position ASC
+    """
+    with conn.cursor() as cur:
+        cur.execute(sql)
+        rows = cur.fetchall()
+
+    if not rows:
+        print("Nenhum dado em member_ranking_metrics para exportar.")
+        return
+
+    import csv
+
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        fieldnames = ["position", "nick", "puuid", "matches", "meanFinalScore"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+
+        for r in rows:
+            writer.writerow({
+                "position": r["position"],
+                "nick": r["nick"],
+                "puuid": r["puuid"],
+                "matches": r["matches_count"],
+                "meanFinalScore": r["mean_final_score"],
+            })
+
+    print(f"Exportado CSV de ranking para: {path}")
+
+
 
 # =========================
 # MAIN
@@ -454,6 +611,9 @@ def export_metrics_to_csv(conn, path: str = "player_match_metrics_export.csv"):
 def main():
     conn = get_connection()
     try:
+        members_by_puuid, member_puuids = fetch_members(conn)
+        print(f"Encontrados {len(member_puuids)} membros ativos na tabela members.")
+
         matches = fetch_matches_to_process(conn)
         print(f"Encontradas {len(matches)} partidas para processar.")
 
@@ -464,16 +624,20 @@ def main():
                 print("  -> sem participantes? pulando.")
                 continue
 
-            metrics_rows = compute_metrics_for_match(m, participants)
+            metrics_rows = compute_metrics_for_match(m, participants, member_puuids)
             if not metrics_rows:
-                print("  -> não foi possível calcular métricas. pulando.")
+                print("  -> nenhum membro do grupo nessa partida. pulando.")
                 continue
 
             insert_metrics(conn, metrics_rows)
             print(f"  -> inseridas {len(metrics_rows)} linhas em player_match_metrics.")
 
-        # Exportar CSV opcional
+        # Atualiza ranking por membro
+        update_member_ranking(conn)
+
+        # Exportar CSV
         export_metrics_to_csv(conn)
+        export_ranking_to_csv(conn)
 
     finally:
         conn.close()

@@ -11,12 +11,14 @@ import com.capao.capitascore.riot.client.RiotMatchClient;
 import com.capao.capitascore.riot.dto.MatchDto;
 import com.capao.capitascore.riot.dto.MatchInfoDto;
 import com.capao.capitascore.riot.dto.ParticipantDto;
+import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@AllArgsConstructor
 public class MatchIngestionService {
 
     private final RiotMatchClient riotMatchClient;
@@ -25,28 +27,17 @@ public class MatchIngestionService {
     private final MatchTimelineRepository matchTimelineRepository;
     private final MemberRepository memberRepository;
 
-    public MatchIngestionService(RiotMatchClient riotMatchClient,
-                                 MatchRepository matchRepository,
-                                 MatchParticipantRepository matchParticipantRepository,
-                                 MatchTimelineRepository matchTimelineRepository,
-                                 MemberRepository memberRepository) {
-        this.riotMatchClient = riotMatchClient;
-        this.matchRepository = matchRepository;
-        this.matchParticipantRepository = matchParticipantRepository;
-        this.matchTimelineRepository = matchTimelineRepository;
-        this.memberRepository = memberRepository;
-    }
-
     @Transactional
     public void syncMatchesForPuuid(String puuid, int start, int count) {
         List<String> matchIds = riotMatchClient.getMatchIdsByPuuid(puuid, start, count);
 
         for (String matchId : matchIds) {
-            if (matchRepository.findByMatchId(matchId).isPresent()) {
-                continue; // já temos
-            }
+            if (matchRepository.findByMatchId(matchId).isPresent()) {continue;}
 
             MatchDto matchDto = riotMatchClient.getMatchById(matchId);
+            Integer queueId = matchDto.getInfo().getQueueId();
+            if (queueId == null || queueId != 440) {continue;}
+
             Match match = mapToMatchEntity(matchDto);
             matchRepository.save(match);
 
@@ -72,6 +63,7 @@ public class MatchIngestionService {
         match.setGameType(info.getGameType());
         match.setGameVersion(info.getGameVersion());
         match.setMapId(info.getMapId());
+        match.setQueueId(info.getQueueId());
 
         for (ParticipantDto p : info.getParticipants()) {
             MatchParticipant mp = mapParticipant(p, match);

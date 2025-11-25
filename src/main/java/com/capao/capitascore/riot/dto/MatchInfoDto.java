@@ -15,6 +15,7 @@ public class MatchInfoDto {
     private long gameDuration;
     private long gameEndTimestamp;
     private long gameId;
+    private Integer queueId;
     private String gameMode;
     private String gameName;
     private long gameStartTimestamp;
