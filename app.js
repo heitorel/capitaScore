@@ -1,4 +1,4 @@
-const CSV_URL = "src/python/data/member_ranking_export.csv";
+const CSV_URL = "member_ranking_export.csv";
 
 const state = {
   rows: [],
@@ -24,7 +24,7 @@ async function loadCsv() {
   } catch (err) {
     console.error(err);
     $body.innerHTML =
-      '<tr><td colspan="4">Erro ao carregar CSV. Verifique se <code>member_ranking_export.csv</code> está no mesmo diretório.</td></tr>';
+      '<tr><td colspan="4">Erro ao carregar Dados.</td></tr>';
   }
 }
 
