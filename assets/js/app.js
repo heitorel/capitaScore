@@ -36,6 +36,7 @@ function parseCsv(text) {
 
   const idxPos = header.indexOf("position");
   const idxNick = header.indexOf("nick");
+  const idxTag = header.indexOf("tag");
   const idxPuuid = header.indexOf("puuid");
   const idxMatches = header.indexOf("matches");
   const idxMean = header.indexOf("meanFinalScore");
@@ -50,13 +51,15 @@ function parseCsv(text) {
 
     const position = Number(cols[idxPos]);
     const nick = cols[idxNick];
-    const puuid = cols[idxPuuid]; // ainda carregamos, só não exibimos
+    const tag = idxTag >= 0 ? cols[idxTag] : "";
+    const puuid = cols[idxPuuid];
     const matches = Number(cols[idxMatches]);
     const meanFinalScore = Number(cols[idxMean]);
 
     rows.push({
       position,
       nick,
+      tag,
       puuid,
       matches,
       meanFinalScore,
@@ -93,6 +96,7 @@ function renderTable() {
     .map((row) => {
       const pos = row.position;
       const nick = row.nick;
+      const tag = row.tag || "";
       const matches = row.matches;
       const score = row.meanFinalScore.toFixed(2);
 
@@ -112,11 +116,21 @@ function renderTable() {
       const medal =
         pos === 1 ? "🥇" : pos === 2 ? "🥈" : pos === 3 ? "🥉" : "🔹";
 
+      // monta URL do OP.GG
+      const riotIdSlug = encodeURIComponent(`${nick}-${tag}`);
+      const opggUrl = `https://op.gg/pt/lol/summoners/BR/${riotIdSlug}`;
+
       return `
         <tr class="${rowClass}">
           <td class="pos">${medal}<span>${pos}º</span></td>
           <td class="nick">
-            ${nick} ${badge ? " · " + badge : ""}
+            <a href="${opggUrl}"
+               target="_blank"
+               rel="noopener noreferrer"
+               title="Ver ${nick}${tag ? "#" + tag : ""} no OP.GG">
+              ${nick}${tag ? `<span class="tag">#${tag}</span>` : ""}
+            </a>
+            ${badge ? " · " + badge : ""}
           </td>
           <td class="matches">${matches}</td>
           <td class="score">${score}</td>

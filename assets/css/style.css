@@ -253,3 +253,16 @@ td.score {
     font-size: 1.2rem;
   }
 }
+/* Link do nick (OP.GG) */
+td.nick a {
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s ease, text-shadow 0.15s ease;
+}
+
+td.nick a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
+}

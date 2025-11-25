@@ -477,16 +477,16 @@ def update_member_ranking(conn):
     Calcula ranking por membro (apenas membros da tabela members)
     e grava em member_ranking_metrics.
     """
-    # agrega por membro
     sql = """
         SELECT m.id AS member_id,
                m.puuid AS puuid,
                m.nick AS nick,
+               m.tag  AS tag,
                COUNT(pmm.id) AS matches_count,
                AVG(pmm.final_score) AS mean_final_score
         FROM player_match_metrics pmm
         JOIN members m ON m.puuid = pmm.puuid
-        GROUP BY m.id, m.puuid, m.nick
+        GROUP BY m.id, m.puuid, m.nick, m.tag
         ORDER BY mean_final_score DESC;
     """
     with conn.cursor() as cur:
@@ -497,7 +497,6 @@ def update_member_ranking(conn):
         print("Nenhum dado para ranking de membros.")
         return
 
-    # atribui posição
     ranking_rows = []
     position = 1
     for r in rows:
@@ -505,18 +504,19 @@ def update_member_ranking(conn):
             "member_id": r["member_id"],
             "puuid": r["puuid"],
             "nick": r["nick"],
+            "tag":  r["tag"],
             "matches_count": int(r["matches_count"]),
             "mean_final_score": float(r["mean_final_score"]),
             "position": position,
         })
         position += 1
 
-    # insere/atualiza tabela member_ranking_metrics
     sql_insert = """
         INSERT INTO member_ranking_metrics (
             member_id,
             puuid,
             nick,
+            tag,
             matches_count,
             mean_final_score,
             position
@@ -525,6 +525,7 @@ def update_member_ranking(conn):
             %(member_id)s,
             %(puuid)s,
             %(nick)s,
+            %(tag)s,
             %(matches_count)s,
             %(mean_final_score)s,
             %(position)s
@@ -532,6 +533,7 @@ def update_member_ranking(conn):
         ON DUPLICATE KEY UPDATE
             puuid = VALUES(puuid),
             nick = VALUES(nick),
+            tag  = VALUES(tag),
             matches_count = VALUES(matches_count),
             mean_final_score = VALUES(mean_final_score),
             position = VALUES(position);
@@ -541,7 +543,6 @@ def update_member_ranking(conn):
     conn.commit()
 
     print(f"Ranking de membros atualizado para {len(ranking_rows)} membros.")
-
 
 # =========================
 # EXPORTAR CSV (OPCIONAL)
@@ -582,6 +583,7 @@ def export_ranking_to_csv(conn, path: Path = CSV_RANKING_EXPORT_PATH):
         SELECT
             position,
             nick,
+            tag,
             puuid,
             matches_count,
             mean_final_score
@@ -599,11 +601,10 @@ def export_ranking_to_csv(conn, path: Path = CSV_RANKING_EXPORT_PATH):
 
     import csv
 
-    # garante que a pasta assets/data exista
     path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(path, "w", newline="", encoding="utf-8") as f:
-        fieldnames = ["position", "nick", "puuid", "matches", "meanFinalScore"]
+        fieldnames = ["position", "nick", "tag", "puuid", "matches", "meanFinalScore"]
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
 
@@ -611,15 +612,13 @@ def export_ranking_to_csv(conn, path: Path = CSV_RANKING_EXPORT_PATH):
             writer.writerow({
                 "position": r["position"],
                 "nick": r["nick"],
+                "tag":  r["tag"],
                 "puuid": r["puuid"],
                 "matches": r["matches_count"],
                 "meanFinalScore": r["mean_final_score"],
             })
 
     print(f"Exportado CSV de ranking para: {path}")
-
-
-
 
 # =========================
 # MAIN
