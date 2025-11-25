@@ -46,5 +46,7 @@ public class MemberRankingMetrics extends BaseEntity {
     @Column(nullable = false)
     private Integer position;
 
+    @Column(nullable = true)
+    private String tag;
 }
 
