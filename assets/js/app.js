@@ -1,4 +1,4 @@
-const CSV_URL = "member_ranking_export.csv";
+const CSV_URL = "assets/data/member_ranking_export.csv";
 
 const state = {
   rows: [],
