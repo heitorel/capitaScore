@@ -1,9 +1,17 @@
 import os
 import json
 import math
+
 from typing import List, Dict, Any
+from pathlib import Path
 
 import pymysql
+
+# pasta do projeto = pai da pasta "python"
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+CSV_RANKING_EXPORT_PATH = BASE_DIR / "data" / "member_ranking_export.csv"
+CSV_METRICS_EXPORT_PATH = BASE_DIR / "data" / "player_match_metrics_export.csv"
 
 # =========================
 # CONFIG DO BANCO
@@ -539,7 +547,7 @@ def update_member_ranking(conn):
 # EXPORTAR CSV (OPCIONAL)
 # =========================
 
-def export_metrics_to_csv(conn, path: str = "player_match_metrics_export.csv"):
+def export_metrics_to_csv(conn, path: Path = CSV_METRICS_EXPORT_PATH):
     """
     Exporta a tabela player_match_metrics inteira para CSV.
     """
@@ -554,6 +562,9 @@ def export_metrics_to_csv(conn, path: str = "player_match_metrics_export.csv"):
 
     import csv
 
+    # garante que a pasta assets/data exista
+    path.parent.mkdir(parents=True, exist_ok=True)
+
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=rows[0].keys())
         writer.writeheader()
@@ -561,10 +572,11 @@ def export_metrics_to_csv(conn, path: str = "player_match_metrics_export.csv"):
 
     print(f"Exportado CSV para: {path}")
 
-def export_ranking_to_csv(conn, path: str = "member_ranking_export.csv"):
+def export_ranking_to_csv(conn, path: Path = CSV_RANKING_EXPORT_PATH):
     """
     Exporta a tabela member_ranking_metrics (ranking dos membros)
-    para CSV, em vez de player_match_metrics.
+    para CSV em assets/data/member_ranking_export.csv
+    (usado pelo front no GitHub Pages).
     """
     sql = """
         SELECT
@@ -576,6 +588,7 @@ def export_ranking_to_csv(conn, path: str = "member_ranking_export.csv"):
         FROM member_ranking_metrics
         ORDER BY position ASC
     """
+
     with conn.cursor() as cur:
         cur.execute(sql)
         rows = cur.fetchall()
@@ -585,6 +598,9 @@ def export_ranking_to_csv(conn, path: str = "member_ranking_export.csv"):
         return
 
     import csv
+
+    # garante que a pasta assets/data exista
+    path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(path, "w", newline="", encoding="utf-8") as f:
         fieldnames = ["position", "nick", "puuid", "matches", "meanFinalScore"]
@@ -601,6 +617,7 @@ def export_ranking_to_csv(conn, path: str = "member_ranking_export.csv"):
             })
 
     print(f"Exportado CSV de ranking para: {path}")
+
 
 
 
