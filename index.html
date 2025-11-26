@@ -15,10 +15,16 @@
                 CapitaScore – Ranking Flex 5x5
             </div>
             <div class="subtitle">
-                by Heitor 'Faisca' Bianchi
+                Ranking automático baseado nos dados processados da Riot API.
             </div>
         </header>
 
+        <!-- MVP da semana -->
+        <section id="mvp-week" class="mvp-section">
+            <!-- preenchido via JS -->
+        </section>
+
+        <!-- Ranking geral -->
         <section class="controls">
             <div class="input-group">
                 <label for="search">Buscar</label>
@@ -49,8 +55,93 @@
             </table>
         </section>
 
+        <!-- Ranking por rota -->
+        <section class="roles-section">
+            <h2 class="section-title">Ranking por Rota</h2>
+            <div class="roles-grid">
+                <div class="role-card">
+                    <h3>TOP</h3>
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nick</th>
+                            <th>P</th>
+                            <th>Score</th>
+                        </tr>
+                        </thead>
+                        <tbody id="roleTopBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="role-card">
+                    <h3>JG</h3>
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nick</th>
+                            <th>P</th>
+                            <th>Score</th>
+                        </tr>
+                        </thead>
+                        <tbody id="roleJgBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="role-card">
+                    <h3>MID</h3>
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nick</th>
+                            <th>P</th>
+                            <th>Score</th>
+                        </tr>
+                        </thead>
+                        <tbody id="roleMidBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="role-card">
+                    <h3>ADC</h3>
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nick</th>
+                            <th>P</th>
+                            <th>Score</th>
+                        </tr>
+                        </thead>
+                        <tbody id="roleAdcBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="role-card">
+                    <h3>SUP</h3>
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Nick</th>
+                            <th>P</th>
+                            <th>Score</th>
+                        </tr>
+                        </thead>
+                        <tbody id="roleSupBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
         <div class="footer-note">
-            Score calculado com base em KDA, dano/min, farm, visão, XP/min, CC/min e KP.
+            Scores calculados com base em KDA, dano/min, farm, visão, XP/min, CC/min e KP (por partida, normalizados).
+        </div>
+
+        <div class="footer-links">
+            <a href="assets/html/matches.html">Ver página de partidas »</a>
         </div>
     </div>
 </div>

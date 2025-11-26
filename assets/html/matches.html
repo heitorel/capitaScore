@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <title>CapitaScore – Partidas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <header class="header">
+            <div class="title">
+                <span class="logo">C</span>
+                CapitaScore – Partidas (Flex 5x5)
+            </div>
+            <div class="subtitle">
+                Histórico de partidas dos membros, baseado em <strong>player_match_metrics_export.csv</strong>.
+            </div>
+        </header>
+
+        <section class="controls">
+            <div class="input-group">
+                <label for="playerFilter">Jogador</label>
+                <input id="playerFilter" type="text" placeholder="nick ou parte do nick..." />
+            </div>
+
+            <div class="input-group">
+                <label for="champFilter">Campeão</label>
+                <input id="champFilter" type="text" placeholder="nome do campeão..." />
+            </div>
+
+            <div class="input-group">
+                <label for="resultFilter">Resultado</label>
+                <select id="resultFilter">
+                    <option value="">Todos</option>
+                    <option value="win">Vitórias</option>
+                    <option value="loss">Derrotas</option>
+                </select>
+            </div>
+        </section>
+
+        <section class="table-wrapper">
+            <table>
+                <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Jogador</th>
+                    <th>Rota</th>
+                    <th>Campeão</th>
+                    <th>KDA</th>
+                    <th>Score</th>
+                    <th>Resultado</th>
+                </tr>
+                </thead>
+                <tbody id="matchesBody"></tbody>
+            </table>
+        </section>
+
+        <div class="footer-links">
+            <a href="../../index.html">« Voltar para o ranking</a>
+        </div>
+    </div>
+</div>
+
+<script src="assets/js/matches.js"></script>
+</body>
+</html>
