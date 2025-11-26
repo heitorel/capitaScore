@@ -550,9 +550,43 @@ def update_member_ranking(conn):
 
 def export_metrics_to_csv(conn, path: Path = CSV_METRICS_EXPORT_PATH):
     """
-    Exporta a tabela player_match_metrics inteira para CSV.
+    Exporta uma visão 'rica' de player_match_metrics para CSV:
+    - junta com match_participants, matches e members
+    - inclui nick, tag, team_position, win, champion, match_riot_id, created_at etc.
     """
-    sql = "SELECT * FROM player_match_metrics"
+    sql = """
+        SELECT
+            pmm.id                          AS metrics_id,
+            pmm.match_id                    AS match_pk,
+            mt.match_id                     AS match_riot_id,
+            pmm.puuid                       AS puuid,
+            mem.nick                        AS nick,
+            mem.tag                         AS tag,
+            mp.team_position                AS team_position,
+            mp.win                          AS win,
+            mp.champion_name                AS champion_name,
+            pmm.kda                         AS kda,
+            pmm.dmg_per_min                 AS dmg_per_min,
+            pmm.gold_per_min                AS gold_per_min,
+            pmm.cs_per_min                  AS cs_per_min,
+            pmm.kp                          AS kp,
+            pmm.dmg_taken_per_min           AS dmg_taken_per_min,
+            pmm.deaths_per_min              AS deaths_per_min,
+            pmm.xp_per_min                  AS xp_per_min,
+            pmm.vision_per_min              AS vision_per_min,
+            pmm.cc_per_min                  AS cc_per_min,
+            pmm.final_score                 AS final_score,
+            pmm.created_at                  AS created_at
+        FROM player_match_metrics pmm
+        JOIN match_participants mp
+          ON pmm.match_participant_id = mp.id
+        JOIN matches mt
+          ON pmm.match_id = mt.id
+        LEFT JOIN members mem
+          ON mem.puuid = pmm.puuid
+        ORDER BY pmm.created_at DESC;
+    """
+
     with conn.cursor() as cur:
         cur.execute(sql)
         rows = cur.fetchall()
@@ -563,21 +597,67 @@ def export_metrics_to_csv(conn, path: Path = CSV_METRICS_EXPORT_PATH):
 
     import csv
 
-    # garante que a pasta assets/data exista
     path.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=rows[0].keys())
-        writer.writeheader()
-        writer.writerows(rows)
+    fieldnames = [
+        "metrics_id",
+        "match_pk",
+        "match_riot_id",
+        "puuid",
+        "nick",
+        "tag",
+        "team_position",
+        "win",
+        "champion_name",
+        "kda",
+        "dmg_per_min",
+        "gold_per_min",
+        "cs_per_min",
+        "kp",
+        "dmg_taken_per_min",
+        "deaths_per_min",
+        "xp_per_min",
+        "vision_per_min",
+        "cc_per_min",
+        "final_score",
+        "created_at",
+    ]
 
-    print(f"Exportado CSV para: {path}")
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for r in rows:
+            writer.writerow({
+                "metrics_id": r["metrics_id"],
+                "match_pk": r["match_pk"],
+                "match_riot_id": r["match_riot_id"],
+                "puuid": r["puuid"],
+                "nick": r["nick"] or "",
+                "tag": r["tag"] or "",
+                "team_position": r["team_position"] or "",
+                "win": int(bool(r["win"])) if r["win"] is not None else "",
+                "champion_name": r["champion_name"],
+                "kda": r["kda"],
+                "dmg_per_min": r["dmg_per_min"],
+                "gold_per_min": r["gold_per_min"],
+                "cs_per_min": r["cs_per_min"],
+                "kp": r["kp"],
+                "dmg_taken_per_min": r["dmg_taken_per_min"],
+                "deaths_per_min": r["deaths_per_min"],
+                "xp_per_min": r["xp_per_min"],
+                "vision_per_min": r["vision_per_min"],
+                "cc_per_min": r["cc_per_min"],
+                "final_score": r["final_score"],
+                "created_at": r["created_at"].isoformat() if r["created_at"] else "",
+            })
+
+    print(f"Exportado CSV de métricas para: {path}")
 
 def export_ranking_to_csv(conn, path: Path = CSV_RANKING_EXPORT_PATH):
     """
     Exporta a tabela member_ranking_metrics (ranking dos membros)
     para CSV em assets/data/member_ranking_export.csv
-    (usado pelo front no GitHub Pages).
+    (usado pelo front).
     """
     sql = """
         SELECT
