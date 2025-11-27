@@ -627,6 +627,26 @@ def export_metrics_to_csv(conn, path: Path = CSV_METRICS_EXPORT_PATH):
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for r in rows:
+            raw_win = r["win"]
+
+            # normaliza win pra 0/1 independente do tipo (int, float, bytes, string)
+            if raw_win is None:
+                win_flag = 0
+            elif isinstance(raw_win, (int, float)):
+                win_flag = 1 if raw_win != 0 else 0
+            elif isinstance(raw_win, (bytes, bytearray)):
+                # BIT(1) do MySQL via PyMySQL chega aqui como b'\x00' ou b'\x01'
+                win_int = int.from_bytes(raw_win, byteorder="big")
+                win_flag = 1 if win_int != 0 else 0
+            else:
+                s = str(raw_win).strip().lower()
+                if s in ("1", "true", "win", "victory", "w"):
+                    win_flag = 1
+                elif s in ("0", "false", "loss", "defeat", "l", "fail", "f"):
+                    win_flag = 0
+                else:
+                    win_flag = 0  # default
+
             writer.writerow({
                 "metrics_id": r["metrics_id"],
                 "match_pk": r["match_pk"],
@@ -635,7 +655,7 @@ def export_metrics_to_csv(conn, path: Path = CSV_METRICS_EXPORT_PATH):
                 "nick": r["nick"] or "",
                 "tag": r["tag"] or "",
                 "team_position": r["team_position"] or "",
-                "win": int(bool(r["win"])) if r["win"] is not None else "",
+                "win": win_flag,
                 "champion_name": r["champion_name"],
                 "kda": r["kda"],
                 "dmg_per_min": r["dmg_per_min"],
@@ -650,6 +670,9 @@ def export_metrics_to_csv(conn, path: Path = CSV_METRICS_EXPORT_PATH):
                 "final_score": r["final_score"],
                 "created_at": r["created_at"].isoformat() if r["created_at"] else "",
             })
+
+
+
 
     print(f"Exportado CSV de métricas para: {path}")
 

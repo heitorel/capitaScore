@@ -357,12 +357,17 @@ td.nick .tag {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.8rem;
+  table-layout: fixed;
 }
 
 .role-card th,
 .role-card td {
   padding: 4px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
+
 
 .role-card thead th {
   border-bottom: 1px solid rgba(55, 65, 81, 0.6);

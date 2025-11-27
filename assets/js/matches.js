@@ -1,4 +1,4 @@
-const METRICS_CSV_URL = "./assets/data/player_match_metrics_export.csv";
+const METRICS_CSV_URL = "../data/player_match_metrics_export.csv";
 
 const state = {
   rows: [],
@@ -68,15 +68,28 @@ function parseMetricsCsv(text) {
 
     const cols = line.split(",");
 
+    const nick = cols[idxNick] || "";
+    const tag = cols[idxTag] || "";
+    const roleRaw = cols[idxRole] || "";
+    const champ = cols[idxChamp] || "";
+    const kdaVal = parseFloat(cols[idxKda]) || 0;
+    const scoreVal = parseFloat(cols[idxScore]) || 0;
+
+    const winRaw = idxWin >= 0 ? cols[idxWin] : "";
+    const s = (winRaw || "").toString().trim().toLowerCase();
+    const isWin = ["1", "true", "win", "victory", "w"].includes(s);
+
+    const created = cols[idxCreated] || "";
+
     rows.push({
-      nick: cols[idxNick] || "",
-      tag: cols[idxTag] || "",
-      role: mapRole(cols[idxRole]),
-      champion: cols[idxChamp] || "",
-      kda: parseFloat(cols[idxKda]) || 0,
-      finalScore: parseFloat(cols[idxScore]) || 0,
-      win: cols[idxWin] === "1",
-      created_at: cols[idxCreated] || "",
+      nick,
+      tag,
+      role: mapRole(roleRaw),
+      champion: champ,
+      kda: kdaVal,
+      finalScore: scoreVal,
+      win: isWin,
+      created_at: created,
     });
   }
 
