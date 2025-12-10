@@ -1,15 +1,19 @@
 :root {
-  --bg: #050816;
-  --bg-card: #0b1020;
-  --accent: #3b82f6;
-  --accent-soft: rgba(59, 130, 246, 0.15);
-  --text: #f9fafb;
-  --muted: #9ca3af;
-  --border: #1f2933;
-  --gold: #facc15;
+  /* Paleta pinguim */
+  --bg: #ffffff;
+  --bg-soft: #fff7f0;
+  --bg-softer: #fff1e3;
+  --accent: #ff7a00;       /* laranja principal */
+  --accent-soft: #ffe1c2;
+  --text: #111111;         /* preto */
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --gold: #fbbf24;
   --silver: #d1d5db;
-  --bronze: #f97316;
+  --bronze: #fb923c;
 }
+
+/* RESET / BASE */
 
 * {
   box-sizing: border-box;
@@ -19,33 +23,45 @@
     sans-serif;
 }
 
+html,
 body {
-  background: radial-gradient(circle at top, #111827 0, #020617 55%);
+  height: 100%;
+}
+
+body {
+  background: var(--bg);
   color: var(--text);
   min-height: 100vh;
-  padding: 24px;
-  display: flex;
-  justify-content: center;
 }
+
+/* LAYOUT FULL-WIDTH */
 
 .container {
   width: 100%;
-  max-width: 960px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 20px 24px;
 }
 
+/* O “card” vira só um wrapper invisível (sem quadro) */
+
 .card {
-  background: linear-gradient(135deg, #020617 0%, #020617 60%, #1e293b 100%);
-  border-radius: 16px;
-  padding: 24px 20px 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
-  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  border: none;
 }
+
+/* HEADER / TÍTULO */
 
 .header {
   display: flex;
   flex-direction: column;
   gap: 6px;
   margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
 }
 
 .title {
@@ -56,6 +72,7 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
+  color: #111111;
 }
 
 .title span.logo {
@@ -65,8 +82,8 @@ body {
   width: 32px;
   height: 32px;
   border-radius: 999px;
-  background: radial-gradient(circle at 30% 0, #facc15, #f97316 60%, #b45309);
-  color: #0b1020;
+  background: radial-gradient(circle at 30% 0, #ffedd5, #ff7a00 60%, #ea580c);
+  color: #111111;
   font-weight: 900;
   font-size: 1rem;
 }
@@ -75,6 +92,8 @@ body {
   color: var(--muted);
   font-size: 0.9rem;
 }
+
+/* CONTROLES / FILTROS */
 
 .controls {
   display: flex;
@@ -88,10 +107,10 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #020617;
+  background: var(--bg-soft);
   border-radius: 999px;
   padding: 6px 10px;
-  border: 1px solid rgba(148, 163, 184, 0.3);
+  border: 1px solid var(--border);
 }
 
 .input-group label {
@@ -102,7 +121,8 @@ body {
 }
 
 .input-group input[type="text"],
-.input-group input[type="number"] {
+.input-group input[type="number"],
+.input-group select {
   border: none;
   outline: none;
   background: transparent;
@@ -112,7 +132,7 @@ body {
 }
 
 .input-group input::placeholder {
-  color: #6b7280;
+  color: #9ca3af;
 }
 
 .pill-info {
@@ -125,11 +145,13 @@ body {
   color: var(--accent);
 }
 
+/* TABELAS – FULL WIDTH, LIMPA */
+
 .table-wrapper {
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  background: #020617;
+  border: 1px solid var(--border);
+  background: #ffffff;
 }
 
 table {
@@ -139,31 +161,35 @@ table {
 }
 
 thead {
-  background: rgba(15, 23, 42, 0.95);
+  background: #111111;
+  color: #f9fafb;
 }
 
 thead th {
   text-align: left;
   padding: 10px 12px;
   font-weight: 500;
-  color: #9ca3af;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   font-size: 0.7rem;
-  border-bottom: 1px solid rgba(75, 85, 99, 0.5);
+  border-bottom: 1px solid #111827;
 }
 
 tbody tr {
-  border-bottom: 1px solid rgba(31, 41, 55, 0.4);
-  transition: background 0.15s, transform 0.1s;
+  border-bottom: 1px solid #f3f4f6;
+  transition: background 0.12s, transform 0.05s;
 }
 
 tbody tr:last-child {
   border-bottom: none;
 }
 
+tbody tr:nth-child(even) {
+  background: #f9fafb;
+}
+
 tbody tr:hover {
-  background: rgba(30, 64, 175, 0.18);
+  background: var(--bg-softer);
   transform: translateY(-1px);
 }
 
@@ -171,6 +197,8 @@ td {
   padding: 9px 12px;
   vertical-align: middle;
 }
+
+/* COLUNAS ESPECÍFICAS */
 
 td.pos {
   width: 60px;
@@ -193,9 +221,11 @@ td.score {
   font-weight: 600;
 }
 
+/* BADGES TOP 1,2,3 */
+
 .badge-top1 {
-  background: linear-gradient(135deg, #facc15, #f97316);
-  color: #111827;
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+  color: #111111;
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 0.7rem;
@@ -205,7 +235,7 @@ td.score {
 
 .badge-top2 {
   background: linear-gradient(135deg, #e5e7eb, #9ca3af);
-  color: #020617;
+  color: #111111;
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 0.7rem;
@@ -214,8 +244,8 @@ td.score {
 }
 
 .badge-top3 {
-  background: linear-gradient(135deg, #fed7aa, #f97316);
-  color: #111827;
+  background: linear-gradient(135deg, #fed7aa, #fb923c);
+  color: #111111;
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 0.7rem;
@@ -224,70 +254,31 @@ td.score {
 }
 
 .row-top1 {
-  background: radial-gradient(circle at left, rgba(250, 204, 21, 0.18), #020617);
+  background: linear-gradient(
+    to right,
+    rgba(251, 191, 36, 0.16),
+    #ffffff
+  ) !important;
 }
 
 .row-top2 {
-  background: radial-gradient(circle at left, rgba(229, 231, 235, 0.15), #020617);
+  background: linear-gradient(
+    to right,
+    rgba(229, 231, 235, 0.16),
+    #ffffff
+  ) !important;
 }
 
 .row-top3 {
-  background: radial-gradient(circle at left, rgba(249, 115, 22, 0.14), #020617);
+  background: linear-gradient(
+    to right,
+    rgba(251, 146, 60, 0.16),
+    #ffffff
+  ) !important;
 }
 
-.footer-note {
-  margin-top: 10px;
-  font-size: 0.75rem;
-  color: var(--muted);
-}
+/* MVP DA SEMANA */
 
-.footer-note span {
-  color: var(--accent);
-}
-
-@media (max-width: 640px) {
-  .card {
-    padding: 16px 12px 12px;
-  }
-  .title {
-    font-size: 1.2rem;
-  }
-}
-/* Link do nick (OP.GG) */
-td.nick a {
-  color: var(--text);
-  text-decoration: none;
-  cursor: pointer;
-  transition: color 0.15s ease, text-shadow 0.15s ease;
-}
-
-td.nick a:hover {
-  color: var(--accent);
-  text-decoration: underline;
-  text-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
-}
-
-/* Nick com link pro OP.GG */
-td.nick a {
-  color: var(--text);
-  text-decoration: none;
-  cursor: pointer;
-  transition: color 0.15s ease, text-shadow 0.15s ease;
-}
-
-td.nick a:hover {
-  color: var(--accent);
-  text-decoration: underline;
-  text-shadow: 0 0 6px rgba(59, 130, 246, 0.6);
-}
-
-td.nick .tag {
-  margin-left: 4px;
-  font-size: 0.8em;
-  color: var(--muted);
-}
-
-/* MVP da semana */
 .mvp-section {
   margin-bottom: 16px;
 }
@@ -295,8 +286,12 @@ td.nick .tag {
 .mvp-card {
   border-radius: 12px;
   padding: 10px 12px;
-  background: radial-gradient(circle at left, rgba(250, 204, 21, 0.18), #020617);
-  border: 1px solid rgba(250, 204, 21, 0.4);
+  background: linear-gradient(
+    to right,
+    rgba(251, 191, 36, 0.16),
+    #ffffff
+  );
+  border: 1px solid rgba(251, 191, 36, 0.5);
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -319,7 +314,8 @@ td.nick .tag {
   font-size: 0.75rem;
 }
 
-/* Ranking por rota */
+/* RANKING POR ROTA */
+
 .roles-section {
   margin-top: 20px;
 }
@@ -339,9 +335,9 @@ td.nick .tag {
 }
 
 .role-card {
-  background: #020617;
+  background: #ffffff;
   border-radius: 12px;
-  border: 1px solid rgba(148, 163, 184, 0.25);
+  border: 1px solid var(--border);
   padding: 8px;
 }
 
@@ -368,33 +364,65 @@ td.nick .tag {
   text-overflow: ellipsis;
 }
 
-
 .role-card thead th {
-  border-bottom: 1px solid rgba(55, 65, 81, 0.6);
+  border-bottom: 1px solid #e5e7eb;
   color: var(--muted);
   font-size: 0.7rem;
 }
 
 .role-card tbody tr {
-  border-bottom: 1px solid rgba(31, 41, 55, 0.4);
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .role-card tbody tr:last-child {
   border-bottom: none;
 }
 
-/* Resultado (página de partidas) */
+/* LINKS NICK (OP.GG) */
+
+td.nick a {
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.15s ease, text-shadow 0.15s ease;
+}
+
+td.nick a:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-shadow: 0 0 6px rgba(255, 122, 0, 0.6);
+}
+
+td.nick .tag {
+  margin-left: 4px;
+  font-size: 0.8em;
+  color: var(--muted);
+}
+
+/* RESULTADO (PÁGINA DE PARTIDAS) */
+
 .result-win {
-  color: #4ade80;
+  color: #16a34a; /* verde */
   font-weight: 600;
 }
 
 .result-loss {
-  color: #f97373;
+  color: #dc2626; /* vermelho */
   font-weight: 600;
 }
 
-/* footer link */
+/* FOOTER */
+
+.footer-note {
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.footer-note span {
+  color: var(--accent);
+}
+
 .footer-links {
   margin-top: 10px;
   font-size: 0.8rem;
@@ -407,4 +435,25 @@ td.nick .tag {
 
 .footer-links a:hover {
   text-decoration: underline;
+}
+
+/* RESPONSIVO */
+
+@media (max-width: 640px) {
+  .container {
+    padding: 12px 12px 20px;
+  }
+
+  .title {
+    font-size: 1.2rem;
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pill-info {
+    margin-left: 0;
+  }
 }
