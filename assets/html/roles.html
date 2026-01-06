@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="dark" />
-  <title>Partidas • Capita Score</title>
+  <title>Rotas • Capita Score</title>
   <link rel="stylesheet" href="../css/styles.css" />
 </head>
 <body>
@@ -26,42 +26,23 @@
 <a data-nav="roles" class="" href="roles.html">Rotas</a>
       </nav>
 
-
     </div>
   </header>
 
   <main class="container">
     <section class="hero">
   <div>
-    <h1>Partidas</h1>
-    <p>Scores individuais agrupados por partida. Clique em uma partida para abrir os detalhes.</p>
+    <h1>Ranking por Rota</h1>
+    <p>Score médio por posição (TOP, JG, MID, ADC, SUP). Cada bloco tem busca e ordenação próprias.</p>
   </div>
 </section>
-<div id="kpis" class="card" style="margin-bottom:14px">
-  <div class="card-header">
-    <h2>Resumo</h2>
-    <div class="sub">Visão geral do CSV</div>
-  </div>
-  <div class="card-body"></div>
-</div>
-    <section class="card">
-  <div class="card-header">
-    <div>
-      <h2>Lista de partidas</h2>
-    </div>
-    <div class="badge">Accordion</div>
-  </div>
-  <div class="card-body">
-    <div id="controls" class="controls"></div>
-    <div id="matches" class="accordion"></div>
-  </div>
-</section>
+    <div id="roles" class="grid"></div>
     <footer>
 
       <div id="page-error" class="small" style="margin-top:8px;color:rgba(255,77,77,.9)"></div>
     </footer>
   </main>
 
-  <script type="module" src="../js/pages/matches.js"></script>
+  <script type="module" src="../js/pages/roles.js"></script>
 </body>
 </html>
