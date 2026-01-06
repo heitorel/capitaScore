@@ -13,6 +13,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 CSV_RANKING_EXPORT_PATH = BASE_DIR / "data" / "member_ranking_export.csv"
 CSV_METRICS_EXPORT_PATH = BASE_DIR / "data" / "player_match_metrics_export.csv"
 
+CSV_RANKING_KDA_MEAN_EXPORT_PATH = BASE_DIR / "data" / "ranking_kda_mean_export.csv"
+CSV_RANKING_POSITION_SCORE_EXPORT_PATH = BASE_DIR / "data" / "ranking_position_score_export.csv"
+CSV_RANKING_DAMAGE_MEAN_EXPORT_PATH = BASE_DIR / "data" / "ranking_damage_mean_export.csv"
+CSV_RANKING_CHAMPION_WINRATE_EXPORT_PATH = BASE_DIR / "data" / "ranking_champion_winrate_export.csv"
+CSV_RANKING_CHAMPION_KDA_EXPORT_PATH = BASE_DIR / "data" / "ranking_champion_kda_export.csv"
+CSV_MATCH_INDIVIDUAL_SCORE_GROUPED_EXPORT_PATH = BASE_DIR / "data" / "match_individual_score_grouped_export.csv"
+
 # =========================
 # CONFIG DO BANCO
 # =========================
@@ -67,6 +74,22 @@ def normalize_metric(values: List[float], invert: bool = False) -> List[float]:
     if invert:
         scores = [100.0 - s for s in scores]
     return scores
+
+
+def win_to_int(raw_win) -> int:
+    if raw_win is None:
+        return 0
+    if isinstance(raw_win, (int, float)):
+        return 1 if raw_win != 0 else 0
+    if isinstance(raw_win, (bytes, bytearray)):
+        win_int = int.from_bytes(raw_win, byteorder="big")
+        return 1 if win_int != 0 else 0
+    s = str(raw_win).strip().lower()
+    if s in ("1", "true", "win", "victory", "w"):
+        return 1
+    if s in ("0", "false", "loss", "defeat", "l", "fail", "f"):
+        return 0
+    return 0
 
 
 # =========================
@@ -325,7 +348,6 @@ def compute_metrics_for_match(
         # participantId usado pela timeline (1..10)
         pid = puuid_to_pid.get(puuid)
         if pid is None:
-            # não deveria acontecer, mas evita crash
             continue
 
         kills = p.get("kills") or 0
@@ -380,13 +402,11 @@ def compute_metrics_for_match(
             "xp_per_min": xp_per_min,
             "vision_per_min": vision_per_min,
             "cc_per_min": cc_per_min,
-            # flag se é membro ou não (para filtrar depois)
             "is_member": puuid in member_puuids,
         }
 
         temp_rows.append(row)
 
-        # métricas para normalização incluem TODOS os players
         metrics_raw["kda"].append(kda)
         metrics_raw["dmg_per_min"].append(dmg_per_min)
         metrics_raw["gold_per_min"].append(gold_per_min)
@@ -418,7 +438,6 @@ def compute_metrics_for_match(
     # ---- Monta linhas finais com scores normalizados e final_score ----
     metrics_rows: List[Dict[str, Any]] = []
     for i, base in enumerate(temp_rows):
-        # só queremos salvar métricas de MEMBERS
         if not base["is_member"]:
             continue
 
@@ -446,7 +465,6 @@ def compute_metrics_for_match(
             WEIGHTS["cc_per_min"]        * score_cc_per_min
         )
 
-        # remove flag
         base.pop("is_member", None)
 
         base.update({
@@ -544,6 +562,7 @@ def update_member_ranking(conn):
 
     print(f"Ranking de membros atualizado para {len(ranking_rows)} membros.")
 
+
 # =========================
 # EXPORTAR CSV (OPCIONAL)
 # =========================
@@ -553,6 +572,9 @@ def export_metrics_to_csv(conn, path: Path = CSV_METRICS_EXPORT_PATH):
     Exporta uma visão 'rica' de player_match_metrics para CSV:
     - junta com match_participants, matches e members
     - inclui nick, tag, team_position, win, champion, match_riot_id, created_at etc.
+
+    Retorna a lista de rows já normalizada (win=0/1 e created_at em ISO)
+    para reutilizar nos rankings sem novas queries.
     """
     sql = """
         SELECT
@@ -593,7 +615,7 @@ def export_metrics_to_csv(conn, path: Path = CSV_METRICS_EXPORT_PATH):
 
     if not rows:
         print("Nenhum dado em player_match_metrics para exportar.")
-        return
+        return []
 
     import csv
 
@@ -623,31 +645,16 @@ def export_metrics_to_csv(conn, path: Path = CSV_METRICS_EXPORT_PATH):
         "created_at",
     ]
 
+    exported_rows = []
+
     with open(path, "w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
         for r in rows:
-            raw_win = r["win"]
+            win_flag = win_to_int(r["win"])
+            created_at_iso = r["created_at"].isoformat() if r["created_at"] else ""
 
-            # normaliza win pra 0/1 independente do tipo (int, float, bytes, string)
-            if raw_win is None:
-                win_flag = 0
-            elif isinstance(raw_win, (int, float)):
-                win_flag = 1 if raw_win != 0 else 0
-            elif isinstance(raw_win, (bytes, bytearray)):
-                # BIT(1) do MySQL via PyMySQL chega aqui como b'\x00' ou b'\x01'
-                win_int = int.from_bytes(raw_win, byteorder="big")
-                win_flag = 1 if win_int != 0 else 0
-            else:
-                s = str(raw_win).strip().lower()
-                if s in ("1", "true", "win", "victory", "w"):
-                    win_flag = 1
-                elif s in ("0", "false", "loss", "defeat", "l", "fail", "f"):
-                    win_flag = 0
-                else:
-                    win_flag = 0  # default
-
-            writer.writerow({
+            out_row = {
                 "metrics_id": r["metrics_id"],
                 "match_pk": r["match_pk"],
                 "match_riot_id": r["match_riot_id"],
@@ -668,13 +675,15 @@ def export_metrics_to_csv(conn, path: Path = CSV_METRICS_EXPORT_PATH):
                 "vision_per_min": r["vision_per_min"],
                 "cc_per_min": r["cc_per_min"],
                 "final_score": r["final_score"],
-                "created_at": r["created_at"].isoformat() if r["created_at"] else "",
-            })
+                "created_at": created_at_iso,
+            }
 
-
-
+            writer.writerow(out_row)
+            exported_rows.append(out_row)
 
     print(f"Exportado CSV de métricas para: {path}")
+    return exported_rows
+
 
 def export_ranking_to_csv(conn, path: Path = CSV_RANKING_EXPORT_PATH):
     """
@@ -723,6 +732,297 @@ def export_ranking_to_csv(conn, path: Path = CSV_RANKING_EXPORT_PATH):
 
     print(f"Exportado CSV de ranking para: {path}")
 
+
+# =========================
+# NOVOS RANKINGS (sem novas queries)
+# =========================
+
+def export_ranking_kda_mean_to_csv(metrics_rows, path: Path = CSV_RANKING_KDA_MEAN_EXPORT_PATH):
+    if not metrics_rows:
+        print("Nenhum dado para ranking de KDA médio.")
+        return
+
+    import csv
+
+    agg = {}
+    for r in metrics_rows:
+        key = (r["puuid"], r["nick"], r["tag"])
+        if key not in agg:
+            agg[key] = {"puuid": r["puuid"], "nick": r["nick"], "tag": r["tag"], "matches": 0, "sumKDA": 0.0, "sumFinalScore": 0.0}
+        agg[key]["matches"] += 1
+        agg[key]["sumKDA"] += float(r["kda"])
+        agg[key]["sumFinalScore"] += float(r["final_score"])
+
+    rows_out = []
+    for _, s in agg.items():
+        matches = s["matches"]
+        rows_out.append({
+            "nick": s["nick"],
+            "tag": s["tag"],
+            "puuid": s["puuid"],
+            "matches": matches,
+            "meanFinalScore": s["sumFinalScore"] / matches,
+            "meanKDA": s["sumKDA"] / matches,
+        })
+
+    rows_out.sort(key=lambda x: x["meanKDA"], reverse=True)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        fieldnames = ["position", "nick", "tag", "puuid", "matches", "meanFinalScore", "meanKDA"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        pos = 1
+        for r in rows_out:
+            r["position"] = pos
+            writer.writerow(r)
+            pos += 1
+
+    print(f"Exportado CSV ranking KDA médio para: {path}")
+
+
+def export_ranking_position_score_to_csv(metrics_rows, path: Path = CSV_RANKING_POSITION_SCORE_EXPORT_PATH):
+    if not metrics_rows:
+        print("Nenhum dado para ranking por posição (team_position).")
+        return
+
+    import csv
+
+    agg = {}
+    for r in metrics_rows:
+        key = r["team_position"]
+        if key not in agg:
+            agg[key] = {"team_position": key, "matches": 0, "sumFinalScore": 0.0}
+        agg[key]["matches"] += 1
+        agg[key]["sumFinalScore"] += float(r["final_score"])
+
+    rows_out = []
+    for _, s in agg.items():
+        matches = s["matches"]
+        rows_out.append({
+            "team_position": s["team_position"],
+            "matches": matches,
+            "meanFinalScore": s["sumFinalScore"] / matches,
+        })
+
+    rows_out.sort(key=lambda x: x["meanFinalScore"], reverse=True)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        fieldnames = ["position", "team_position", "matches", "meanFinalScore"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        pos = 1
+        for r in rows_out:
+            r["position"] = pos
+            writer.writerow(r)
+            pos += 1
+
+    print(f"Exportado CSV ranking posição por score para: {path}")
+
+
+def export_ranking_damage_mean_to_csv(metrics_rows, path: Path = CSV_RANKING_DAMAGE_MEAN_EXPORT_PATH):
+    if not metrics_rows:
+        print("Nenhum dado para ranking de dano médio.")
+        return
+
+    import csv
+
+    agg = {}
+    for r in metrics_rows:
+        key = (r["puuid"], r["nick"], r["tag"])
+        if key not in agg:
+            agg[key] = {"puuid": r["puuid"], "nick": r["nick"], "tag": r["tag"], "matches": 0, "sumDmg": 0.0, "sumFinalScore": 0.0}
+        agg[key]["matches"] += 1
+        agg[key]["sumDmg"] += float(r["dmg_per_min"])
+        agg[key]["sumFinalScore"] += float(r["final_score"])
+
+    rows_out = []
+    for _, s in agg.items():
+        matches = s["matches"]
+        rows_out.append({
+            "nick": s["nick"],
+            "tag": s["tag"],
+            "puuid": s["puuid"],
+            "matches": matches,
+            "meanFinalScore": s["sumFinalScore"] / matches,
+            "meanDmgPerMin": s["sumDmg"] / matches,
+        })
+
+    rows_out.sort(key=lambda x: x["meanDmgPerMin"], reverse=True)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        fieldnames = ["position", "nick", "tag", "puuid", "matches", "meanFinalScore", "meanDmgPerMin"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        pos = 1
+        for r in rows_out:
+            r["position"] = pos
+            writer.writerow(r)
+            pos += 1
+
+    print(f"Exportado CSV ranking dano médio para: {path}")
+
+
+def export_ranking_champion_winrate_to_csv(metrics_rows, path: Path = CSV_RANKING_CHAMPION_WINRATE_EXPORT_PATH):
+    if not metrics_rows:
+        print("Nenhum dado para ranking winrate por campeão.")
+        return
+
+    import csv
+
+    agg = {}
+    for r in metrics_rows:
+        champ = r["champion_name"]
+        if champ not in agg:
+            agg[champ] = {"champion_name": champ, "matches": 0, "wins": 0, "sumFinalScore": 0.0, "sumKDA": 0.0}
+        agg[champ]["matches"] += 1
+        agg[champ]["wins"] += int(r["win"])
+        agg[champ]["sumFinalScore"] += float(r["final_score"])
+        agg[champ]["sumKDA"] += float(r["kda"])
+
+    rows_out = []
+    for _, s in agg.items():
+        matches = s["matches"]
+        wins = s["wins"]
+        rows_out.append({
+            "champion_name": s["champion_name"],
+            "matches": matches,
+            "wins": wins,
+            "winRate": (wins / matches) * 100.0,
+            "meanFinalScore": s["sumFinalScore"] / matches,
+            "meanKDA": s["sumKDA"] / matches,
+        })
+
+    rows_out.sort(key=lambda x: x["winRate"], reverse=True)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        fieldnames = ["position", "champion_name", "matches", "wins", "winRate", "meanFinalScore", "meanKDA"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        pos = 1
+        for r in rows_out:
+            r["position"] = pos
+            writer.writerow(r)
+            pos += 1
+
+    print(f"Exportado CSV ranking winrate por campeão para: {path}")
+
+
+def export_ranking_champion_kda_to_csv(metrics_rows, path: Path = CSV_RANKING_CHAMPION_KDA_EXPORT_PATH):
+    if not metrics_rows:
+        print("Nenhum dado para ranking KDA por campeão.")
+        return
+
+    import csv
+
+    agg = {}
+    for r in metrics_rows:
+        champ = r["champion_name"]
+        if champ not in agg:
+            agg[champ] = {"champion_name": champ, "matches": 0, "wins": 0, "sumFinalScore": 0.0, "sumKDA": 0.0}
+        agg[champ]["matches"] += 1
+        agg[champ]["wins"] += int(r["win"])
+        agg[champ]["sumFinalScore"] += float(r["final_score"])
+        agg[champ]["sumKDA"] += float(r["kda"])
+
+    rows_out = []
+    for _, s in agg.items():
+        matches = s["matches"]
+        wins = s["wins"]
+        rows_out.append({
+            "champion_name": s["champion_name"],
+            "matches": matches,
+            "meanKDA": (s["sumKDA"] / matches),
+            "winRate": (wins / matches) * 100.0,
+            "meanFinalScore": s["sumFinalScore"] / matches,
+        })
+
+    rows_out.sort(key=lambda x: x["meanKDA"], reverse=True)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        fieldnames = ["position", "champion_name", "matches", "meanKDA", "winRate", "meanFinalScore"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        pos = 1
+        for r in rows_out:
+            r["position"] = pos
+            writer.writerow(r)
+            pos += 1
+
+    print(f"Exportado CSV ranking KDA por campeão para: {path}")
+
+
+def export_match_individual_score_grouped_to_csv(metrics_rows, path: Path = CSV_MATCH_INDIVIDUAL_SCORE_GROUPED_EXPORT_PATH):
+    if not metrics_rows:
+        print("Nenhum dado para score individual agrupado por match.")
+        return
+
+    import csv
+
+    matches = {}
+    for r in metrics_rows:
+        match_pk = r["match_pk"]
+        if match_pk not in matches:
+            matches[match_pk] = {
+                "match_pk": r["match_pk"],
+                "match_riot_id": r["match_riot_id"],
+                "created_at": r["created_at"],
+                "players": [],
+            }
+
+        matches[match_pk]["players"].append({
+            "team_position": r["team_position"],
+            "nick": r["nick"],
+            "tag": r["tag"],
+            "puuid": r["puuid"],
+            "win": int(r["win"]),
+            "champion_name": r["champion_name"],
+            "kda": float(r["kda"]),
+            "dmg_per_min": float(r["dmg_per_min"]),
+            "final_score": float(r["final_score"]),
+        })
+
+    rows_out = []
+    for _, m in matches.items():
+        players = m["players"]
+        players.sort(key=lambda x: x["final_score"], reverse=True)
+
+        sum_score = 0.0
+        max_score = None
+        for p in players:
+            sum_score += p["final_score"]
+            if max_score is None or p["final_score"] > max_score:
+                max_score = p["final_score"]
+
+        mean_score = sum_score / len(players) if players else 0.0
+
+        rows_out.append({
+            "match_pk": m["match_pk"],
+            "match_riot_id": m["match_riot_id"],
+            "created_at": m["created_at"],
+            "players": len(players),
+            "meanFinalScore": mean_score,
+            "maxFinalScore": max_score if max_score is not None else 0.0,
+            "players_scores": json.dumps(players, ensure_ascii=False),
+        })
+
+    rows_out.sort(key=lambda x: x["created_at"], reverse=True)
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        fieldnames = ["match_pk", "match_riot_id", "created_at", "players", "meanFinalScore", "maxFinalScore", "players_scores"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for r in rows_out:
+            writer.writerow(r)
+
+    print(f"Exportado CSV score individual agrupado por partidas para: {path}")
+
+
 # =========================
 # MAIN
 # =========================
@@ -755,8 +1055,16 @@ def main():
         update_member_ranking(conn)
 
         # Exportar CSV
-        export_metrics_to_csv(conn)
+        exported_metrics_rows = export_metrics_to_csv(conn)
         export_ranking_to_csv(conn)
+
+        # Novos rankings (sem novas queries)
+        export_ranking_kda_mean_to_csv(exported_metrics_rows)
+        export_ranking_position_score_to_csv(exported_metrics_rows)
+        export_ranking_damage_mean_to_csv(exported_metrics_rows)
+        export_ranking_champion_winrate_to_csv(exported_metrics_rows)
+        export_ranking_champion_kda_to_csv(exported_metrics_rows)
+        export_match_individual_score_grouped_to_csv(exported_metrics_rows)
 
     finally:
         conn.close()
