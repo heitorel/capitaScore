@@ -788,38 +788,77 @@ def export_ranking_position_score_to_csv(metrics_rows, path: Path = CSV_RANKING_
 
     import csv
 
+    def map_pos(tp: str) -> str:
+        s = (tp or "").strip().upper()
+        if s in ("JUNGLE", "JG"):
+            return "JG"
+        if s in ("MIDDLE", "MID"):
+            return "MID"
+        if s in ("BOTTOM", "ADC"):
+            return "ADC"
+        if s in ("UTILITY", "SUP", "SUPPORT"):
+            return "SUP"
+        if s in ("TOP",):
+            return "TOP"
+        return s
+
+    pos_order = {"TOP": 0, "JG": 1, "MID": 2, "ADC": 3, "SUP": 4}
+
     agg = {}
     for r in metrics_rows:
-        key = r["team_position"]
+        tp = map_pos(r["team_position"])
+        puuid = r["puuid"]
+        nick = r["nick"]
+        tag = r["tag"]
+
+        key = (tp, puuid)
         if key not in agg:
-            agg[key] = {"team_position": key, "matches": 0, "sumFinalScore": 0.0}
+            agg[key] = {
+                "team_position": tp,
+                "puuid": puuid,
+                "nick_tag": f"{nick}#{tag}" if tag else nick,
+                "matches": 0,
+                "sumFinalScore": 0.0,
+            }
+
         agg[key]["matches"] += 1
         agg[key]["sumFinalScore"] += float(r["final_score"])
 
-    rows_out = []
-    for _, s in agg.items():
+    by_pos = {"TOP": [], "JG": [], "MID": [], "ADC": [], "SUP": []}
+    for (_, _), s in agg.items():
+        tp = s["team_position"]
+        if tp not in by_pos:
+            continue
         matches = s["matches"]
-        rows_out.append({
-            "team_position": s["team_position"],
+        by_pos[tp].append({
+            "team_position": tp,
+            "puuid": s["puuid"],
+            "nick": s["nick_tag"],
             "matches": matches,
             "meanFinalScore": s["sumFinalScore"] / matches,
         })
 
-    rows_out.sort(key=lambda x: x["meanFinalScore"], reverse=True)
+    rows_out = []
+    for tp in ["TOP", "JG", "MID", "ADC", "SUP"]:
+        players = by_pos[tp]
+        players.sort(key=lambda x: x["meanFinalScore"], reverse=True)
+        pos = 1
+        for p in players:
+            p["position"] = pos
+            rows_out.append(p)
+            pos += 1
+
+    rows_out.sort(key=lambda x: (pos_order.get(x["team_position"], 99), x["position"]))
 
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", newline="", encoding="utf-8") as f:
-        fieldnames = ["position", "team_position", "matches", "meanFinalScore"]
+        fieldnames = ["team_position", "position", "nick", "matches", "meanFinalScore", "puuid"]
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
-        pos = 1
         for r in rows_out:
-            r["position"] = pos
             writer.writerow(r)
-            pos += 1
 
-    print(f"Exportado CSV ranking posição por score para: {path}")
-
+    print(f"Exportado CSV ranking por posição (player rank por team_position) para: {path}")
 
 def export_ranking_damage_mean_to_csv(metrics_rows, path: Path = CSV_RANKING_DAMAGE_MEAN_EXPORT_PATH):
     if not metrics_rows:
