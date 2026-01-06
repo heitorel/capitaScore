@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="dark" />
-  <title>Partidas • Capita Score</title>
+  <title>Campeões • Capita Score</title>
   <link rel="stylesheet" href="../css/styles.css" />
 </head>
 <body>
@@ -33,35 +33,51 @@
   <main class="container">
     <section class="hero">
   <div>
-    <h1>Partidas</h1>
-    <p>Scores individuais agrupados por partida. Clique em uma partida para abrir os detalhes.</p>
+    <h1>Rankings por Campeão</h1>
+    <p>Win rate e KDA médio por campeão (com ordenação e busca).</p>
   </div>
 </section>
 <div id="kpis" class="card" style="margin-bottom:14px">
   <div class="card-header">
     <h2>Resumo</h2>
-    <div class="sub">Visão geral do CSV</div>
+    <div class="sub">Top métricas do conjunto</div>
   </div>
   <div class="card-body"></div>
 </div>
-    <section class="card">
-  <div class="card-header">
-    <div>
-      <h2>Lista de partidas</h2>
+    <div class="grid grid-2">
+  <section class="card" id="card-winrate">
+    <div class="card-header">
+      <div>
+        <h2>Win rate por campeão</h2>
+      </div>
+      <span class="badge orange">WR</span>
     </div>
-    <div class="badge">Accordion</div>
-  </div>
-  <div class="card-body">
-    <div id="controls" class="controls"></div>
-    <div id="matches" class="accordion"></div>
-  </div>
-</section>
+    <div class="card-body">
+      <div class="controls" data-controls></div>
+      <div data-table></div>
+    </div>
+  </section>
+
+  <section class="card" id="card-kda">
+    <div class="card-header">
+      <div>
+        <h2>KDA por campeão</h2>
+        <div class="sub">Fonte: ranking_champion_kda_export.csv</div>
+      </div>
+      <span class="badge orange">KDA</span>
+    </div>
+    <div class="card-body">
+      <div class="controls" data-controls></div>
+      <div data-table></div>
+    </div>
+  </section>
+</div>
     <footer>
 
       <div id="page-error" class="small" style="margin-top:8px;color:rgba(255,77,77,.9)"></div>
     </footer>
   </main>
 
-  <script type="module" src="../js/pages/matches.js"></script>
+  <script type="module" src="../js/pages/champions.js"></script>
 </body>
 </html>
